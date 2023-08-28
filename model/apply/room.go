@@ -1,4 +1,4 @@
-package model
+package apply
 
 import (
 	"context"
@@ -8,6 +8,11 @@ import (
 	"log/slog"
 	"time"
 )
+
+type SetRoomSelectionRequest struct {
+	// RoomId 是房间的唯一标识符。
+	RoomId string `json:"room_id"`
+}
 
 // Room 是面试房间的数据库模型。
 type Room struct {
@@ -222,6 +227,24 @@ func RemoveSelection(ctx context.Context, openid string, roomId string) error {
 		panic(err)
 	}
 	return nil
+}
+
+func CheckIsSelectionExists(ctx context.Context, openid string) bool {
+	slog.Debug("model.CheckIsSelectionExists: 正在检查用户是否已经选择了房间", "openid", openid)
+	srv := service.GetService()
+	selection := Selection{OpenId: openid}
+	err := srv.DB.WithContext(ctx).Model(&Selection{}).Where(&selection).First(&selection).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			slog.Debug("model.CheckIsSelectionExists: 用户未选择房间", "openid", openid)
+			return false
+		} else {
+			slog.Error("调用ORM失败。", "error", err)
+			panic(err)
+		}
+	}
+	slog.Debug("model.CheckIsSelectionExists: 用户已选择房间", "openid", openid)
+	return true
 }
 
 func GetSelection(ctx context.Context, openid string) (*Selection, error) {
