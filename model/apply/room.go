@@ -14,6 +14,21 @@ type SetRoomSelectionRequest struct {
 	RoomId string `json:"room_id"`
 }
 
+type GetRoomListResponse struct {
+	// RoomId 是房间的唯一标识符。
+	RoomId string `json:"room_id"`
+	// Name 是房间的名称。
+	Name string `json:"name"`
+	// Time 是面试时间。
+	Time *time.Time `json:"time"`
+	// Capacity 是房间的容量。
+	Capacity int `json:"capacity"`
+	// Occupancy 是房间的占用情况。
+	Occupancy int `json:"occupancy"`
+	// Location 是房间地点。
+	Location string `json:"location"`
+}
+
 // Room 是面试房间的数据库模型。
 type Room struct {
 	gorm.Model
@@ -61,7 +76,7 @@ func (e *SelectionNotFoundError) Error() string {
 //
 // ctx 是上下文。
 // date 是面试日期，格式为“YYYY-MM-DD”。
-func GetRoomList(ctx context.Context, date string) []Room {
+func GetRoomList(ctx context.Context, date string) []GetRoomListResponse {
 	var rooms []Room
 	srv := service.GetService()
 	timeStart := date + " 00:00:00"
@@ -74,7 +89,18 @@ func GetRoomList(ctx context.Context, date string) []Room {
 		slog.Error("调用ORM失败。", "error", err)
 		panic(err)
 	}
-	return rooms
+	var res []GetRoomListResponse
+	for _, room := range rooms {
+		res = append(res, GetRoomListResponse{
+			RoomId:    room.RoomId,
+			Name:      room.Name,
+			Time:      room.Time,
+			Capacity:  room.Capacity,
+			Occupancy: room.Occupancy,
+			Location:  room.Location,
+		})
+	}
+	return res
 }
 
 // GetRoomDateList 获取房间日期列表。
@@ -95,14 +121,28 @@ func GetRoomDateList(ctx context.Context) []string {
 	for _, room := range rooms {
 		dates = append(dates, room.Time.Format("2006-01-02"))
 	}
+	// 去重
+	dates = removeDuplicateElement(dates)
 	return dates
+}
+
+func removeDuplicateElement(a []string) []string {
+	result := make([]string, 0)
+	temp := map[string]struct{}{}
+	for _, item := range a {
+		if _, ok := temp[item]; !ok {
+			temp[item] = struct{}{}
+			result = append(result, item)
+		}
+	}
+	return result
 }
 
 // Selection 是用户的房间选择的数据库模型。
 type Selection struct {
 	gorm.Model
 	// OpenId 是用户的OpenId。
-	OpenId string `gorm:"type:varchar(36)"`
+	OpenId string `gorm:"type:varchar(40)"`
 	// RoomId 是房间的唯一标识符。
 	RoomId string `gorm:"type:varchar(36)"`
 }

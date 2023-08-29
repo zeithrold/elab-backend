@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func ApplyRoute(r *gin.Engine) {
+func NewHandler(r *gin.RouterGroup) {
 	group := r.Group("/apply")
 	group.Use(auth.EnsureValidToken())
 	group.GET("/config", GetConfig)

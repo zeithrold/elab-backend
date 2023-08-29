@@ -11,6 +11,7 @@ import (
 var db *gorm.DB
 
 func NewService() *gorm.DB {
+	slog.Debug("db.NewService: 正在初始化数据库")
 	username := os.Getenv("MYSQL_USERNAME")
 	password := os.Getenv("MYSQL_PASSWORD")
 	host := os.Getenv("MYSQL_HOST")

@@ -15,7 +15,9 @@ func NewService() *redis.Client {
 	slog.Info("service.redis.NewService: 正在初始化Redis服务")
 	addr := os.Getenv("REDIS_ADDR")
 	password := os.Getenv("REDIS_PASSWORD")
-	db, err := strconv.Atoi(os.Getenv("REDIS_DB"))
+	dbNum := os.Getenv("REDIS_DB")
+	slog.Info("service.redis.NewService: 正在连接Redis", "addr", addr, "password", password, "db", dbNum)
+	db, err := strconv.Atoi(dbNum)
 	if err != nil {
 		slog.Error("无法解析REDIS_DB", "error", err)
 		panic(err)

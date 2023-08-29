@@ -12,7 +12,7 @@ import (
 type TextForm struct {
 	gorm.Model
 	// OpenId 是用户的OpenId。
-	OpenId string `gorm:"type:varchar(36)"`
+	OpenId string `gorm:"type:varchar(40)"`
 	// Question 是用户需要回答的问题。
 	QuestionId string `gorm:"type:varchar(1024)"`
 	// Answer 是用户的回答。

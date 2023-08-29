@@ -20,13 +20,13 @@ func EnsureValidToken() gin.HandlerFunc {
 	jwtValidator := auth.GetValidator()
 	errorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
 		slog.Error("jwt验证失败", "error", err)
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusUnauthorized)
-		_, err = w.Write([]byte(`{"message":"用户验证失败。", "description":"您的Token无效。"}`))
-		if err != nil {
-			slog.Error("无法写入错误信息", "error", err)
-			panic(err)
-		}
+		//w.Header().Set("Content-Type", "application/json")
+		//w.WriteHeader(http.StatusUnauthorized)
+		//_, err = w.Write([]byte(`{"message":"用户验证失败。", "description":"您的Token无效。"}`))
+		//if err != nil {
+		//	slog.Error("无法写入错误信息", "error", err)
+		//	panic(err)
+		//}
 	}
 	middleware := jwtmiddleware.New(
 		jwtValidator.ValidateToken,

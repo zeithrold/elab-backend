@@ -25,7 +25,7 @@ type TicketUpdateRequest struct {
 type Ticket struct {
 	gorm.Model
 	// Openid 是用户的Openid。
-	OpenId string `gorm:"type:varchar(36)"`
+	OpenId string `gorm:"type:varchar(40)"`
 	// Name 是用户的姓名。
 	Name string `gorm:"type:varchar(36)"`
 	// StudentId 是用户的学号。

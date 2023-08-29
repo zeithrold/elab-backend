@@ -16,6 +16,12 @@ func ApplyRoute(group *gin.RouterGroup) {
 
 func GetRoomList(ctx *gin.Context) {
 	date := ctx.Query("date")
+	if date == "" {
+		ctx.JSON(400, gin.H{
+			"message": "请求格式错误，缺少参数 date",
+		})
+		return
+	}
 	ctx.JSON(200, apply.GetRoomList(ctx, date))
 }
 
