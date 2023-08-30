@@ -5,7 +5,7 @@ import "context"
 // GetStatusResponse 是获取用户状态的响应。
 type GetStatusResponse struct {
 	// Ticket 是用户是否已经提交申请表。
-	Ticket bool `json:"apply"`
+	Ticket bool `json:"ticket"`
 	// RoomSelection 是用户是否已经选择房间。
 	RoomSelection bool `json:"room_selection"`
 	// TextForm 是用户是否已经填写文本表单。
