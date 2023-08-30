@@ -2,8 +2,10 @@ package room
 
 import (
 	"elab-backend/model/apply"
+	"elab-backend/service/redis"
 	"elab-backend/util/auth"
 	"github.com/gin-gonic/gin"
+	"log/slog"
 )
 
 func ApplyRoute(group *gin.RouterGroup) {
@@ -39,7 +41,16 @@ func SetSelection(ctx *gin.Context) {
 		})
 		return
 	}
-	err := apply.SetSelection(ctx, openid, request.RoomId)
+	unlock, err := redis.GetLock(ctx, "room_selection")
+	if err != nil {
+		slog.Error("handler.apply.room.SetSelection: 获取锁失败", "err", err)
+		ctx.JSON(400, gin.H{
+			"message": "请求失败",
+		})
+		return
+	}
+	defer unlock()
+	err = apply.SetSelection(ctx, openid, request.RoomId)
 	if err != nil {
 		switch v := err.(type) {
 		case *apply.RoomFullError:
