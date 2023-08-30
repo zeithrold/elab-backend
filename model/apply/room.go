@@ -15,6 +15,10 @@ type SetRoomSelectionRequest struct {
 }
 
 type GetRoomListResponse struct {
+	Rooms []RoomListItem `json:"rooms"`
+}
+
+type RoomListItem struct {
 	// RoomId 是房间的唯一标识符。
 	RoomId string `json:"room_id"`
 	// Name 是房间的名称。
@@ -27,6 +31,11 @@ type GetRoomListResponse struct {
 	Occupancy int `json:"occupancy"`
 	// Location 是房间地点。
 	Location string `json:"location"`
+}
+
+type GetRoomDateListResponse struct {
+	// DateList 是房间的日期列表。
+	Dates []string `json:"dates"`
 }
 
 // Room 是面试房间的数据库模型。
@@ -76,7 +85,7 @@ func (e *SelectionNotFoundError) Error() string {
 //
 // ctx 是上下文。
 // date 是面试日期，格式为“YYYY-MM-DD”。
-func GetRoomList(ctx context.Context, date string) []GetRoomListResponse {
+func GetRoomList(ctx context.Context, date string) *GetRoomListResponse {
 	var rooms []Room
 	srv := service.GetService()
 	timeStart := date + " 00:00:00"
@@ -89,9 +98,9 @@ func GetRoomList(ctx context.Context, date string) []GetRoomListResponse {
 		slog.Error("调用ORM失败。", "error", err)
 		panic(err)
 	}
-	var res []GetRoomListResponse
+	var res []RoomListItem
 	for _, room := range rooms {
-		res = append(res, GetRoomListResponse{
+		res = append(res, RoomListItem{
 			RoomId:    room.RoomId,
 			Name:      room.Name,
 			Time:      room.Time,
@@ -100,13 +109,15 @@ func GetRoomList(ctx context.Context, date string) []GetRoomListResponse {
 			Location:  room.Location,
 		})
 	}
-	return res
+	return &GetRoomListResponse{
+		Rooms: res,
+	}
 }
 
 // GetRoomDateList 获取房间日期列表。
 //
 // ctx 是上下文。
-func GetRoomDateList(ctx context.Context) []string {
+func GetRoomDateList(ctx context.Context) *GetRoomDateListResponse {
 	var rooms []Room
 	srv := service.GetService()
 	slog.Debug("model.GetRoomDateList: 正在获取房间日期列表")
@@ -123,7 +134,9 @@ func GetRoomDateList(ctx context.Context) []string {
 	}
 	// 去重
 	dates = removeDuplicateElement(dates)
-	return dates
+	return &GetRoomDateListResponse{
+		Dates: dates,
+	}
 }
 
 func removeDuplicateElement(a []string) []string {

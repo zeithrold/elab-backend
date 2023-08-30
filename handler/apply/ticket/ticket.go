@@ -7,7 +7,7 @@ import (
 )
 
 func ApplyRoute(group *gin.RouterGroup) {
-	route := group.Group("/apply")
+	route := group.Group("/ticket")
 	route.GET("", GetTicket)
 	route.PATCH("", UpdateTicket)
 }
