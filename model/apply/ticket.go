@@ -8,7 +8,7 @@ import (
 	"log/slog"
 )
 
-type TicketUpdateRequest struct {
+type TicketBody struct {
 	// Name 是用户的姓名。
 	Name string `json:"name"`
 	// StudentId 是用户的学号。
@@ -40,25 +40,11 @@ type Ticket struct {
 	Submitted bool `gorm:"type:bool"`
 }
 
-// GetTicketResponse 是获取用户申请表的响应。
-type GetTicketResponse struct {
-	// Name 是用户的姓名。
-	Name string `json:"name"`
-	// StudentId 是用户的学号。
-	StudentId string `json:"student_id"`
-	// ClassName 是用户的班级，以此来替代所属学院
-	ClassName string `json:"class_name"`
-	// Group 是用户的组别，如“软件组”、“硬件组”等。
-	Group string `json:"group"`
-	// Contact 是用户的联系方式，如手机号等。
-	Contact string `json:"contact"`
-}
-
 // GetTicket 获取用户的申请表。
 //
 // ctx 是上下文。
 // openid 是用户的Openid。
-func GetTicket(ctx context.Context, openid string) *GetTicketResponse {
+func GetTicket(ctx context.Context, openid string) *TicketBody {
 	slog.Debug("model.GetTicket: 正在获取申请表", "openid", openid)
 	slog.Debug("model.GetTicket: 正在检查申请表存在性", "openid", openid)
 	if !CheckIsTicketExists(ctx, openid) {
@@ -75,7 +61,7 @@ func GetTicket(ctx context.Context, openid string) *GetTicketResponse {
 		slog.Error("调用ORM失败。", "error", err)
 		panic(err)
 	}
-	return &GetTicketResponse{
+	return &TicketBody{
 		Name:      ticket.Name,
 		StudentId: ticket.StudentId,
 		ClassName: ticket.ClassName,
@@ -126,7 +112,7 @@ func InitTicket(ctx context.Context, openid string) {
 // UpdateTicket 更新用户的申请表。
 //
 // openid 是用户的Openid。
-func UpdateTicket(ctx context.Context, openid string, body *TicketUpdateRequest) {
+func UpdateTicket(ctx context.Context, openid string, body *TicketBody) {
 	slog.Debug("model.UpdateTicket: 正在更新申请表", "openid", openid)
 	srv := service.GetService()
 	ticket := Ticket{

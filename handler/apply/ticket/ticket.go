@@ -21,7 +21,7 @@ func GetTicket(ctx *gin.Context) {
 func UpdateTicket(ctx *gin.Context) {
 	token := auth.GetToken(ctx)
 	openid := token.RegisteredClaims.Subject
-	var request apply.TicketUpdateRequest
+	var request apply.TicketBody
 	if err := ctx.ShouldBindJSON(&request); err != nil {
 		ctx.JSON(400, gin.H{
 			"message": "请求格式错误",
