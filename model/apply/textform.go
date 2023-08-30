@@ -22,8 +22,8 @@ type TextForm struct {
 // Question 是用户需要回答的问题列表
 type Question struct {
 	gorm.Model
-	// Id 是用户需要回答的问题ID。
-	Id string `gorm:"type:varchar(36)"`
+	// QuestionId 是用户需要回答的问题ID。
+	QuestionId string `gorm:"type:varchar(36)"`
 	// Question 是问题标题。
 	Question string `gorm:"type:varchar(1024)"`
 	// Text 是问题的文字描述。
@@ -74,7 +74,7 @@ func GetQuestionList(ctx context.Context) *GetQuestionListResponse {
 	}
 	var result GetQuestionListResponse
 	for _, v := range questions {
-		result.Questions = append(result.Questions, QuestionListItem{Id: v.Id, Question: v.Question, Text: v.Text})
+		result.Questions = append(result.Questions, QuestionListItem{Id: v.QuestionId, Question: v.Question, Text: v.Text})
 	}
 	return &result
 }
@@ -114,8 +114,8 @@ func InitTextForm(ctx context.Context, openid string) {
 		panic(err)
 	}
 	for _, v := range questions {
-		slog.Debug("model.InitTextForm: 正在初始化文本表单", "openid", openid, "questionId", v.Id)
-		err := srv.DB.WithContext(ctx).Model(&TextForm{}).Create(&TextForm{OpenId: openid, QuestionId: v.Id}).Error
+		slog.Debug("model.InitTextForm: 正在初始化文本表单", "openid", openid, "questionId", v.QuestionId)
+		err := srv.DB.WithContext(ctx).Model(&TextForm{}).Create(&TextForm{OpenId: openid, QuestionId: v.QuestionId}).Error
 		if err != nil {
 			slog.Error("调用ORM失败。", "error", err)
 			panic(err)
@@ -176,19 +176,3 @@ func CheckIsTextFormExists(ctx context.Context, openid string) bool {
 	slog.Debug("model.CheckIsTextFormExists: 用户已填写文本表单", "openid", openid)
 	return true
 }
-
-//// ClearQuestion 清除用户的问题。
-////
-//// ctx 是上下文。
-//// openid 是用户的Openid。
-//func ClearQuestion(ctx context.Context, openid string) {
-//	slog.Debug("model.ClearQuestion: 正在清除用户的文本表单", "openid", openid)
-//	srv := service.GetService()
-//	err := srv.DB.WithContext(ctx).Model(&TextForm{}).Where(&TextForm{
-//		OpenId: openid,
-//	}).Delete(&TextForm{}).Error
-//	if err != nil {
-//		slog.Error("调用ORM失败。", "error", err)
-//		panic(err)
-//	}
-//}
