@@ -7,11 +7,12 @@ import (
 )
 
 func ApplyRoute(group *gin.RouterGroup) {
-	route := group.Group("/textform")
-	route.GET("", GetTextForm)
-	route.GET("/question", GetQuestionList)
-	route.GET("/question/:id", GetQuestion)
-	route.PATCH("/:id", UpdateTextForm)
+	textFormRoute := group.Group("/textform")
+	textFormRoute.GET("", GetTextForm)
+	textFormRoute.PATCH("/:id", UpdateTextForm)
+	questionRoute := group.Group("/question")
+	questionRoute.GET("", GetQuestionList)
+	questionRoute.GET("/:id", GetQuestion)
 }
 
 func GetQuestionList(ctx *gin.Context) {
