@@ -53,7 +53,7 @@ type QuestionListItem struct {
 // TextFormList 更新用户的文字表单请求。
 type TextFormList struct {
 	// TextForms 是用户的文字表单列表。
-	TextForms []TextFormListItem `json:"text_forms"`
+	TextForms []TextFormListItem `json:"textforms"`
 }
 
 // TextFormListItem 是用户的文字表单列表项。

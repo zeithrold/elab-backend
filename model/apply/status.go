@@ -9,7 +9,7 @@ type GetStatusResponse struct {
 	// RoomSelection 是用户是否已经选择房间。
 	RoomSelection bool `json:"room_selection"`
 	// TextForm 是用户是否已经填写文本表单。
-	TextForm bool `json:"text_form"`
+	TextForm bool `json:"textform"`
 }
 
 // GetStatus 获取用户的状态。
