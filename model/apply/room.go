@@ -195,6 +195,12 @@ func SetSelection(ctx context.Context, openid string, roomId string) error {
 		RoomId:    roomId,
 		Available: true,
 	}
+	// 获取房间的信息
+	err := srv.DB.WithContext(ctx).Model(&Room{}).Where(&targetRoom).First(&targetRoom).Error
+	if err != nil {
+		slog.Error("调用ORM失败。", "error", err)
+		panic(err)
+	}
 	// 检测房间是否已满
 	isFull := targetRoom.Occupancy >= targetRoom.Capacity
 	if isFull {
@@ -205,7 +211,7 @@ func SetSelection(ctx context.Context, openid string, roomId string) error {
 		OpenId: openid,
 		RoomId: roomId,
 	}
-	err := srv.DB.WithContext(ctx).Create(&selection).Error
+	err = srv.DB.WithContext(ctx).Create(&selection).Error
 	if err != nil {
 		slog.Error("调用ORM失败。", "error", err)
 		panic(err)
@@ -249,6 +255,18 @@ func CheckIsAlreadySelected(ctx context.Context, openid string) (string, bool) {
 	}
 	slog.Debug("model.CheckIsAlreadySelected: 用户已选择房间", "openid", openid)
 	return selection.RoomId, true
+}
+
+func ClearSelection(ctx context.Context, openid string) error {
+	slog.Debug("model.ClearSelection: 正在清除用户的房间选择", "openid", openid)
+	srv := service.GetService()
+	selection := Selection{OpenId: openid}
+	err := srv.DB.WithContext(ctx).Model(&Selection{}).Where(&selection).Delete(&Selection{}).Error
+	if err != nil {
+		slog.Error("调用ORM失败。", "error", err)
+		panic(err)
+	}
+	return nil
 }
 
 func RemoveSelection(ctx context.Context, openid string, roomId string) error {

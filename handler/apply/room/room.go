@@ -13,6 +13,7 @@ func ApplyRoute(group *gin.RouterGroup) {
 	route.GET("", GetRoomList)
 	route.GET("/date", GetRoomDateList)
 	route.POST("/selection", SetSelection)
+	route.DELETE("/selection", ClearSelection)
 	route.GET("/selection", GetSelection)
 }
 
@@ -70,6 +71,37 @@ func SetSelection(ctx *gin.Context) {
 	})
 }
 
+func ClearSelection(ctx *gin.Context) {
+	token := auth.GetToken(ctx)
+	openid := token.RegisteredClaims.Subject
+	isSelectionExists := apply.CheckIsSelectionExists(ctx, openid)
+	if !isSelectionExists {
+		ctx.JSON(400, gin.H{
+			"message": "请求失败，用户未选择",
+		})
+		return
+	}
+	unlock, err := redis.GetLock(ctx, "room_selection")
+	if err != nil {
+		slog.Error("handler.apply.room.SetSelection: 获取锁失败", "err", err)
+		ctx.JSON(400, gin.H{
+			"message": "请求失败",
+		})
+		return
+	}
+	defer unlock()
+	err = apply.ClearSelection(ctx, openid)
+	if err != nil {
+		ctx.JSON(400, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+	ctx.JSON(200, gin.H{
+		"message": "清除成功",
+	})
+}
+
 func GetSelection(ctx *gin.Context) {
 	token := auth.GetToken(ctx)
 	openid := token.RegisteredClaims.Subject
@@ -78,6 +110,7 @@ func GetSelection(ctx *gin.Context) {
 		ctx.JSON(400, gin.H{
 			"message": err.Error(),
 		})
+		return
 	}
 	ctx.JSON(200, gin.H{
 		"id": selection.RoomId,

@@ -31,6 +31,7 @@ func GetLock(ctx context.Context, key string) (func(), error) {
 		if ok {
 			slog.Debug("redis.GetLock: 成功获取锁", "key", key)
 			return func() {
+				slog.Debug("redis.GetLock: 正在释放锁", "key", key)
 				client.Del(ctx, key)
 			}, nil
 		}
