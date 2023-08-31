@@ -14,7 +14,9 @@ func ApplyRoute(group *gin.RouterGroup) {
 }
 
 func GetQuestionList(ctx *gin.Context) {
-	ctx.JSON(200, apply.GetQuestionList(ctx))
+	token := auth.GetToken(ctx)
+	openid := token.RegisteredClaims.Subject
+	ctx.JSON(200, apply.GetQuestionList(ctx, openid))
 }
 
 func GetTextForm(ctx *gin.Context) {

@@ -17,6 +17,8 @@ type TextForm struct {
 	QuestionId string `gorm:"type:varchar(1024)"`
 	// Answer 是用户的回答。
 	Answer string `gorm:"type:varchar(1024)"`
+	// Submitted 是用户是否已经提交申请表。
+	Submitted bool `gorm:"type:bool"`
 }
 
 // Question 是用户需要回答的问题列表
@@ -44,6 +46,8 @@ type QuestionListItem struct {
 	Question string `json:"question"`
 	// Text 是问题的文字描述。
 	Text string `json:"text"`
+	// Submitted 是用户是否已经提交申请表。
+	Submitted bool `json:"submitted"`
 }
 
 // TextFormList 更新用户的文字表单请求。
@@ -58,12 +62,14 @@ type TextFormListItem struct {
 	Id string `json:"id"`
 	// Answer 是用户的回答。
 	Answer string `json:"answer"`
+	// Submitted 是用户是否已经提交申请表。
+	Submitted bool `json:"submitted"`
 }
 
 // GetQuestionList 获取问题列表。
 //
 // ctx 是上下文。
-func GetQuestionList(ctx context.Context) *GetQuestionListResponse {
+func GetQuestionList(ctx context.Context, openid string) *GetQuestionListResponse {
 	slog.Debug("model.GetQuestionList: 正在获取问题列表")
 	srv := service.GetService()
 	var questions []Question
@@ -72,9 +78,21 @@ func GetQuestionList(ctx context.Context) *GetQuestionListResponse {
 		slog.Error("调用ORM失败。", "error", err)
 		panic(err)
 	}
+	textFormList := GetTextForm(ctx, openid)
 	var result GetQuestionListResponse
 	for _, v := range questions {
-		result.Questions = append(result.Questions, QuestionListItem{Id: v.QuestionId, Question: v.Question, Text: v.Text})
+		var submitted bool
+		for _, vv := range textFormList.TextForms {
+			if v.QuestionId == vv.Id {
+				submitted = vv.Submitted
+			}
+		}
+		result.Questions = append(result.Questions, QuestionListItem{
+			Id:        v.QuestionId,
+			Question:  v.Question,
+			Text:      v.Text,
+			Submitted: submitted,
+		})
 	}
 	return &result
 }
@@ -99,7 +117,13 @@ func GetTextForm(ctx context.Context, openid string) *TextFormList {
 	}
 	var result TextFormList
 	for _, v := range textForms {
-		result.TextForms = append(result.TextForms, TextFormListItem{Id: v.QuestionId, Answer: v.Answer})
+		result.TextForms = append(
+			result.TextForms,
+			TextFormListItem{
+				Id:        v.QuestionId,
+				Answer:    v.Answer,
+				Submitted: v.Submitted,
+			})
 	}
 	return &result
 }
@@ -115,7 +139,8 @@ func InitTextForm(ctx context.Context, openid string) {
 	}
 	for _, v := range questions {
 		slog.Debug("model.InitTextForm: 正在初始化文本表单", "openid", openid, "questionId", v.QuestionId)
-		err := srv.DB.WithContext(ctx).Model(&TextForm{}).Create(&TextForm{OpenId: openid, QuestionId: v.QuestionId}).Error
+		err := srv.DB.WithContext(ctx).Model(&TextForm{}).Create(
+			&TextForm{OpenId: openid, QuestionId: v.QuestionId, Submitted: false}).Error
 		if err != nil {
 			slog.Error("调用ORM失败。", "error", err)
 			panic(err)
@@ -143,7 +168,8 @@ func UpdateTextForm(ctx context.Context, openid string, request *TextFormList) {
 			OpenId:     openid,
 			QuestionId: v.Id,
 		}).Updates(&TextForm{
-			Answer: v.Answer,
+			Answer:    v.Answer,
+			Submitted: true,
 		}).Error
 		if err != nil {
 			slog.Error("调用ORM失败。", "error", err)

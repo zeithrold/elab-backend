@@ -10,8 +10,8 @@ import (
 )
 
 type SetRoomSelectionRequest struct {
-	// RoomId 是房间的唯一标识符。
-	RoomId string `json:"room_id"`
+	// Id 是房间的唯一标识符。
+	Id string `json:"id"`
 }
 
 type GetRoomListResponse struct {
@@ -19,8 +19,8 @@ type GetRoomListResponse struct {
 }
 
 type RoomListItem struct {
-	// RoomId 是房间的唯一标识符。
-	RoomId string `json:"room_id"`
+	// Id 是房间的唯一标识符。
+	Id string `json:"id"`
 	// Name 是房间的名称。
 	Name string `json:"name"`
 	// Time 是面试时间。
@@ -101,7 +101,7 @@ func GetRoomList(ctx context.Context, date string) *GetRoomListResponse {
 	var res []RoomListItem
 	for _, room := range rooms {
 		res = append(res, RoomListItem{
-			RoomId:    room.RoomId,
+			Id:        room.RoomId,
 			Name:      room.Name,
 			Time:      room.Time,
 			Capacity:  room.Capacity,

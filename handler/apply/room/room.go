@@ -50,7 +50,7 @@ func SetSelection(ctx *gin.Context) {
 		return
 	}
 	defer unlock()
-	err = apply.SetSelection(ctx, openid, request.RoomId)
+	err = apply.SetSelection(ctx, openid, request.Id)
 	if err != nil {
 		switch v := err.(type) {
 		case *apply.RoomFullError:
