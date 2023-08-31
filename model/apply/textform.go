@@ -50,10 +50,21 @@ type QuestionListItem struct {
 	Submitted bool `json:"submitted"`
 }
 
-// TextFormList 更新用户的文字表单请求。
-type TextFormList struct {
-	// TextForms 是用户的文字表单列表。
-	TextForms []TextFormListItem `json:"textforms"`
+type UpdateTextFormRequestUri struct {
+	// Id 是用户需要回答的问题ID。
+	Id string `uri:"id" binding:"required"`
+}
+
+type UpdateTextFormRequest struct {
+	// Id 是用户需要回答的问题ID。
+	Id string `json:"id"`
+	// Answer 是用户的回答。
+	Answer string `json:"answer"`
+}
+
+// GetTextFormListResponse 获取用户的文字表单列表。
+type GetTextFormListResponse struct {
+	TextForms []TextFormListItem `json:"textform"`
 }
 
 // TextFormListItem 是用户的文字表单列表项。
@@ -101,7 +112,7 @@ func GetQuestionList(ctx context.Context, openid string) *GetQuestionListRespons
 //
 // ctx 是上下文。
 // openid 是用户的Openid。
-func GetTextForm(ctx context.Context, openid string) *TextFormList {
+func GetTextForm(ctx context.Context, openid string) *GetTextFormListResponse {
 	slog.Debug("model.GetTextForm: 正在获取文本表单", "openid", openid)
 	isTextFormExists := CheckIsTextFormExists(ctx, openid)
 	if !isTextFormExists {
@@ -115,7 +126,7 @@ func GetTextForm(ctx context.Context, openid string) *TextFormList {
 		slog.Error("调用ORM失败。", "error", err)
 		panic(err)
 	}
-	var result TextFormList
+	var result GetTextFormListResponse
 	for _, v := range textForms {
 		result.TextForms = append(
 			result.TextForms,
@@ -153,28 +164,19 @@ func InitTextForm(ctx context.Context, openid string) {
 // ctx 是上下文。
 // openid 是用户的Openid。
 // request 是用户的请求。
-func UpdateTextForm(ctx context.Context, openid string, request *TextFormList) {
-	slog.Debug("model.UpdateTextForm: 正在更新文本表单", "openid", openid, "len", len(request.TextForms))
+func UpdateTextForm(ctx context.Context, openid string, request *UpdateTextFormRequest) {
+	slog.Debug("model.UpdateTextForm: 正在更新文本表单", "openid", openid, "questionId", request.Id)
 	srv := service.GetService()
-	slog.Debug("model.UpdateTextForm: 正在检查用户是否已经填写了文本表单", "openid", openid)
-	//isTextFormExists := CheckIsTextFormExists(ctx, openid)
-	//if isTextFormExists {
-	//	slog.Debug("model.UpdateTextForm: 用户已经填写了文本表单，正在清除")
-	//	ClearQuestion(ctx, openid)
-	//}
-	for _, v := range request.TextForms {
-		slog.Debug("model.UpdateTextForm: 正在更新文本表单", "openid", openid, "questionId", v.Id, "answer", v.Answer)
-		err := srv.DB.WithContext(ctx).Model(&TextForm{}).Where(&TextForm{
-			OpenId:     openid,
-			QuestionId: v.Id,
-		}).Updates(&TextForm{
-			Answer:    v.Answer,
-			Submitted: true,
-		}).Error
-		if err != nil {
-			slog.Error("调用ORM失败。", "error", err)
-			panic(err)
-		}
+	err := srv.DB.WithContext(ctx).Model(&TextForm{}).Where(&TextForm{
+		OpenId:     openid,
+		QuestionId: request.Id,
+	}).Updates(&TextForm{
+		Answer:    request.Answer,
+		Submitted: true,
+	})
+	if err != nil {
+		slog.Error("调用ORM失败。", "error", err)
+		panic(err)
 	}
 	slog.Debug("model.UpdateTextForm: 更新文本表单成功", "openid", openid)
 }
