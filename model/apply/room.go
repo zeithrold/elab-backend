@@ -82,7 +82,7 @@ func (e *SelectionNotFoundError) Error() string {
 }
 
 // GetRoomList 获取房间列表。
-//
+// `
 // ctx 是上下文。
 // date 是面试日期，格式为“YYYY-MM-DD”。
 func GetRoomList(ctx context.Context, date string) *GetRoomListResponse {

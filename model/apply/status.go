@@ -20,6 +20,6 @@ func GetStatus(ctx context.Context, openid string) *GetStatusResponse {
 	return &GetStatusResponse{
 		Ticket:        CheckIsTicketExists(ctx, openid),
 		RoomSelection: CheckIsSelectionExists(ctx, openid),
-		TextForm:      CheckIsTextFormExists(ctx, openid),
+		TextForm:      CheckIsTextFormSubmitted(ctx, openid),
 	}
 }

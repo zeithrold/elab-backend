@@ -10,6 +10,7 @@ func ApplyRoute(group *gin.RouterGroup) {
 	route := group.Group("/textform")
 	route.GET("", GetTextForm)
 	route.GET("/question", GetQuestionList)
+	route.GET("/question/:id", GetQuestion)
 	route.PATCH("/:id", UpdateTextForm)
 }
 
@@ -23,6 +24,19 @@ func GetTextForm(ctx *gin.Context) {
 	token := auth.GetToken(ctx)
 	openid := token.RegisteredClaims.Subject
 	ctx.JSON(200, apply.GetTextForm(ctx, openid))
+}
+
+func GetQuestion(ctx *gin.Context) {
+	token := auth.GetToken(ctx)
+	openid := token.RegisteredClaims.Subject
+	var request apply.GetQuestionRequestUri
+	if err := ctx.ShouldBindUri(&request); err != nil {
+		ctx.JSON(400, gin.H{
+			"message": "请求格式错误",
+		})
+		return
+	}
+	ctx.JSON(200, apply.GetQuestion(ctx, openid, request.Id))
 }
 
 func UpdateTextForm(ctx *gin.Context) {

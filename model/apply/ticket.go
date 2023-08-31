@@ -89,6 +89,10 @@ func CheckIsTicketExists(ctx context.Context, openid string) bool {
 		}
 		return false
 	}
+	if !ticket.Submitted {
+		slog.Debug("model.CheckIsTicketExists: 申请表存在，但未提交", "openid", openid)
+		return false
+	}
 	return true
 }
 

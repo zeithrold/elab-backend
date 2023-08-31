@@ -38,6 +38,11 @@ type GetQuestionListResponse struct {
 	Questions []QuestionListItem `json:"questions"`
 }
 
+type GetQuestionRequestUri struct {
+	// Id 是用户需要回答的问题ID。
+	Id string `uri:"id" binding:"required"`
+}
+
 // QuestionListItem 是用户需要回答的问题列表项。
 type QuestionListItem struct {
 	// Id 是用户需要回答的问题ID。
@@ -84,7 +89,7 @@ func GetQuestionList(ctx context.Context, openid string) *GetQuestionListRespons
 	slog.Debug("model.GetQuestionList: 正在获取问题列表")
 	srv := service.GetService()
 	var questions []Question
-	err := srv.DB.WithContext(ctx).Model(&questions).Find(&questions).Error
+	err := srv.DB.WithContext(ctx).Model(&Question{}).Find(&questions).Error
 	if err != nil {
 		slog.Error("调用ORM失败。", "error", err)
 		panic(err)
@@ -106,6 +111,30 @@ func GetQuestionList(ctx context.Context, openid string) *GetQuestionListRespons
 		})
 	}
 	return &result
+}
+
+func GetQuestion(ctx context.Context, openid string, questionId string) *QuestionListItem {
+	slog.Debug("model.GetQuestion: 正在获取问题")
+	srv := service.GetService()
+	var question Question
+	err := srv.DB.WithContext(ctx).Model(&Question{}).Where(&Question{QuestionId: questionId}).Find(&question).Error
+	if err != nil {
+		slog.Error("调用ORM失败。", "error", err)
+		panic(err)
+	}
+	textFormList := GetTextForm(ctx, openid)
+	var submitted bool
+	for _, vv := range textFormList.TextForms {
+		if question.QuestionId == vv.Id {
+			submitted = vv.Submitted
+		}
+	}
+	return &QuestionListItem{
+		Id:        question.QuestionId,
+		Question:  question.Question,
+		Text:      question.Text,
+		Submitted: submitted,
+	}
 }
 
 // GetTextForm 获取用户的文本表单。
@@ -143,7 +172,7 @@ func InitTextForm(ctx context.Context, openid string) {
 	slog.Debug("model.InitTextForm: 正在初始化文本表单", "openid", openid)
 	srv := service.GetService()
 	var questions []Question
-	err := srv.DB.WithContext(ctx).Model(&questions).Find(&questions).Error
+	err := srv.DB.WithContext(ctx).Model(&Question{}).Find(&questions).Error
 	if err != nil {
 		slog.Error("调用ORM失败。", "error", err)
 		panic(err)
@@ -173,7 +202,7 @@ func UpdateTextForm(ctx context.Context, openid string, request *UpdateTextFormR
 	}).Updates(&TextForm{
 		Answer:    request.Answer,
 		Submitted: true,
-	})
+	}).Error
 	if err != nil {
 		slog.Error("调用ORM失败。", "error", err)
 		panic(err)
@@ -181,15 +210,15 @@ func UpdateTextForm(ctx context.Context, openid string, request *UpdateTextFormR
 	slog.Debug("model.UpdateTextForm: 更新文本表单成功", "openid", openid)
 }
 
-// CheckIsTextFormExists 检查用户是否已经填写了文本表单。
+// CheckIsTextFormSubmitted 检查用户是否已经填写了文本表单。
 //
 // ctx 是上下文。
 // openid 是用户的Openid。
-func CheckIsTextFormExists(ctx context.Context, openid string) bool {
+func CheckIsTextFormSubmitted(ctx context.Context, openid string) bool {
 	slog.Debug("model.CheckIsTextFormExists: 正在检查用户是否已经填写了文本表单", "openid", openid)
 	srv := service.GetService()
 	var textForm TextForm
-	err := srv.DB.WithContext(ctx).Model(&textForm).Where(&TextForm{
+	err := srv.DB.WithContext(ctx).Model(&TextForm{}).Where(&TextForm{
 		OpenId: openid,
 	}).First(&textForm).Error
 	if err != nil {
@@ -198,9 +227,42 @@ func CheckIsTextFormExists(ctx context.Context, openid string) bool {
 			slog.Error("调用ORM失败。", "error", err)
 			panic(err)
 		}
-		slog.Debug("model.CheckIsTextFormExists: 用户未填写文本表单", "openid", openid)
+		slog.Debug("model.CheckIsTextFormExists: 没有openid为", "openid", openid, "的文本表单")
 		return false
 	}
-	slog.Debug("model.CheckIsTextFormExists: 用户已填写文本表单", "openid", openid)
+	err = srv.DB.WithContext(ctx).Model(&TextForm{}).Where(&TextForm{
+		OpenId:    openid,
+		Submitted: false,
+	}).First(&textForm).Error
+	if err != nil {
+		isNotExist := errors.Is(err, gorm.ErrRecordNotFound)
+		if !isNotExist {
+			slog.Error("调用ORM失败。", "error", err)
+			panic(err)
+		}
+		slog.Debug("model.CheckIsTextFormExists: 没有submitted: false为表单，用户已经填写完成表单", "openid", openid)
+		return true
+	}
+	slog.Debug("model.CheckIsTextFormExists: 用户未填写完全文本表单", "openid", openid)
+	return false
+}
+
+func CheckIsTextFormExists(ctx context.Context, openid string) bool {
+	slog.Debug("model.CheckIsTextFormExists: 正在检查用户是否已经填写了文本表单", "openid", openid)
+	srv := service.GetService()
+	var textForm TextForm
+	err := srv.DB.WithContext(ctx).Model(&TextForm{}).Where(&TextForm{
+		OpenId: openid,
+	}).First(&textForm).Error
+	if err != nil {
+		isNotExist := errors.Is(err, gorm.ErrRecordNotFound)
+		if !isNotExist {
+			slog.Error("调用ORM失败。", "error", err)
+			panic(err)
+		}
+		slog.Debug("model.CheckIsTextFormExists: 没有openid为", "openid", openid, "的文本表单")
+		return false
+	}
+	slog.Debug("model.CheckIsTextFormExists: openid为", "openid", openid, "的文本表单存在")
 	return true
 }

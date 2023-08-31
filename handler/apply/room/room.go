@@ -80,6 +80,6 @@ func GetSelection(ctx *gin.Context) {
 		})
 	}
 	ctx.JSON(200, gin.H{
-		"room_id": selection.RoomId,
+		"id": selection.RoomId,
 	})
 }

@@ -22,7 +22,7 @@ func GetConfig(ctx context.Context) map[string]string {
 	slog.Debug("model.GetConfig: 正在获取配置")
 	svc := service.GetService()
 	var config []Config
-	err := svc.DB.WithContext(ctx).Model(&config).Find(&config).Error
+	err := svc.DB.WithContext(ctx).Model(&Config{}).Find(&config).Error
 	if err != nil {
 		slog.Error("调用ORM失败。", "error", err)
 		panic(err)
