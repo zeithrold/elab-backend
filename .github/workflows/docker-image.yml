@@ -5,13 +5,13 @@ name: Docker
 # separate terms of service, privacy policy, and support
 # documentation.
 
-on: {}
-#  push:
-#    branches: ['main']
-#    # Publish semver tags as releases.
-#    tags: ['v*.*.*']
-#  pull_request:
-#    branches: ['main']
+on:
+  push:
+    branches: ['main']
+    # Publish semver tags as releases.
+    tags: ['v*.*.*']
+  pull_request:
+    branches: ['main']
 
 env:
   # github.repository as <account>/<repo>
@@ -47,7 +47,7 @@ jobs:
           echo "Flags:     ${{ steps.buildx.outputs.flags }}"
           echo "Platforms: ${{ steps.buildx.outputs.platforms }}"
           
-            # Login against a Docker registry except on PR
+      # Login against a Docker registry except on PR
       # https://github.com/docker/login-action
       - name: Log into registry Docker Hub
         if: ${{ github.event_name != 'pull_request' }}

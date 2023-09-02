@@ -29,6 +29,7 @@ func GetConfig(ctx context.Context) map[string]string {
 	}
 	result := make(map[string]string)
 	for _, c := range config {
+		slog.Debug("model.GetConfig: 正在获取配置", "key", c.Key, "value", c.Value)
 		result[c.Key] = c.Value
 	}
 	return result

@@ -37,7 +37,7 @@ type Ticket struct {
 	// Contact 是用户的联系方式，如手机号等。
 	Contact string `gorm:"type:varchar(16)"`
 	// Submitted 是用户是否已经提交申请表。
-	Submitted bool `gorm:"type:bool"`
+	Submitted *bool `gorm:"type:bool"`
 }
 
 // GetTicket 获取用户的申请表。
@@ -89,7 +89,7 @@ func CheckIsTicketExists(ctx context.Context, openid string) bool {
 		}
 		return false
 	}
-	if !ticket.Submitted {
+	if !*ticket.Submitted {
 		slog.Debug("model.CheckIsTicketExists: 申请表存在，但未提交", "openid", openid)
 		return false
 	}
@@ -104,7 +104,7 @@ func InitTicket(ctx context.Context, openid string) {
 	srv := service.GetService()
 	ticket := Ticket{
 		OpenId:    openid,
-		Submitted: false,
+		Submitted: &[]bool{false}[0],
 	}
 	err := srv.DB.WithContext(ctx).Model(&Ticket{}).Create(&ticket).Error
 	if err != nil {
@@ -126,7 +126,7 @@ func UpdateTicket(ctx context.Context, openid string, body *TicketBody) {
 		ClassName: body.ClassName,
 		Group:     body.Group,
 		Contact:   body.Contact,
-		Submitted: true,
+		Submitted: &[]bool{true}[0],
 	}
 	err := srv.DB.WithContext(ctx).Model(&Ticket{}).Where(&Ticket{
 		OpenId: openid,

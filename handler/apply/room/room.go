@@ -5,6 +5,7 @@ import (
 	"elab-backend/service/redis"
 	"elab-backend/util/auth"
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
 	"log/slog"
 )
 
@@ -107,7 +108,13 @@ func GetSelection(ctx *gin.Context) {
 	openid := token.RegisteredClaims.Subject
 	selection, err := apply.GetSelection(ctx, openid)
 	if err != nil {
-		ctx.JSON(400, gin.H{
+		if (errors.Is(err, &apply.SelectionNotFoundError{})) {
+			ctx.JSON(200, gin.H{
+				"id": "",
+			})
+			return
+		}
+		ctx.JSON(404, gin.H{
 			"message": err.Error(),
 		})
 		return

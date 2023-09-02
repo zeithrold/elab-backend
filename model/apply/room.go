@@ -11,7 +11,7 @@ import (
 
 type SetRoomSelectionRequest struct {
 	// Id 是房间的唯一标识符。
-	Id string `json:"id"`
+	Id string `json:"id,omitempty"`
 }
 
 type GetRoomListResponse struct {
@@ -54,7 +54,7 @@ type Room struct {
 	// Location 是房间地点。
 	Location string `gorm:"type:varchar(255)"`
 	// Available 是房间是否可用。
-	Available bool `gorm:"type:bool"`
+	Available *bool `gorm:"type:bool"`
 }
 
 type RoomNotFoundError struct{}
@@ -92,7 +92,7 @@ func GetRoomList(ctx context.Context, date string) *GetRoomListResponse {
 	timeEnd := date + " 23:59:59"
 	slog.Debug("model.GetRoomList: 正在获取房间列表", "timeStart", timeStart, "timeEnd", timeEnd)
 	err := srv.DB.WithContext(ctx).Model(&Room{}).Where(&Room{
-		Available: true,
+		Available: &[]bool{true}[0],
 	}).Where("time BETWEEN ? AND ?", timeStart, timeEnd).Find(&rooms).Error
 	if err != nil {
 		slog.Error("调用ORM失败。", "error", err)
@@ -122,7 +122,7 @@ func GetRoomDateList(ctx context.Context) *GetRoomDateListResponse {
 	srv := service.GetService()
 	slog.Debug("model.GetRoomDateList: 正在获取房间日期列表")
 	err := srv.DB.WithContext(ctx).Model(&Room{}).Where(&Room{
-		Available: true,
+		Available: &[]bool{true}[0],
 	}).Find(&rooms).Error
 	if err != nil {
 		slog.Error("调用ORM失败。", "error", err)
@@ -193,7 +193,7 @@ func SetSelection(ctx context.Context, openid string, roomId string) error {
 	}
 	targetRoom := Room{
 		RoomId:    roomId,
-		Available: true,
+		Available: &[]bool{true}[0],
 	}
 	// 获取房间的信息
 	err := srv.DB.WithContext(ctx).Model(&Room{}).Where(&targetRoom).First(&targetRoom).Error
@@ -216,6 +216,12 @@ func SetSelection(ctx context.Context, openid string, roomId string) error {
 		slog.Error("调用ORM失败。", "error", err)
 		panic(err)
 	}
+	err = srv.DB.WithContext(ctx).Model(&Room{}).Where(&Room{
+		RoomId:    roomId,
+		Available: &[]bool{true}[0],
+	}).Updates(&Room{
+		Occupancy: targetRoom.Occupancy + 1,
+	}).Error
 	return nil
 }
 
@@ -224,7 +230,7 @@ func CheckIsRoomExists(ctx context.Context, roomId string) bool {
 	srv := service.GetService()
 	targetRoom := Room{
 		RoomId:    roomId,
-		Available: true,
+		Available: &[]bool{true}[0],
 	}
 	err := srv.DB.WithContext(ctx).Model(&Room{}).Where(&targetRoom).First(&targetRoom).Error
 	if err != nil {
@@ -261,7 +267,31 @@ func ClearSelection(ctx context.Context, openid string) error {
 	slog.Debug("model.ClearSelection: 正在清除用户的房间选择", "openid", openid)
 	srv := service.GetService()
 	selection := Selection{OpenId: openid}
-	err := srv.DB.WithContext(ctx).Model(&Selection{}).Where(&selection).Delete(&Selection{}).Error
+	slog.Debug("model.ClearSelection: 正在获取用户的房间选择", "openid", openid)
+	err := srv.DB.WithContext(ctx).Model(&Selection{}).Where(&selection).First(&selection).Error
+	if err != nil {
+		slog.Error("调用ORM失败。", "error", err)
+		panic(err)
+	}
+	roomId := selection.RoomId
+	slog.Debug("model.ClearSelection: 正在移除用户的房间选择", "openid", openid)
+	err = srv.DB.WithContext(ctx).Model(&Selection{}).Where(&selection).Delete(&Selection{}).Error
+	if err != nil {
+		slog.Error("调用ORM失败。", "error", err)
+		panic(err)
+	}
+	slog.Debug("model.ClearSelection: 正在更新房间占用情况", "openid", openid)
+	targetRoom := Room{
+		RoomId:    roomId,
+		Available: &[]bool{true}[0],
+	}
+	err = srv.DB.WithContext(ctx).Model(&Room{}).Where(&targetRoom).First(&targetRoom).Error
+	if err != nil {
+		slog.Error("调用ORM失败。", "error", err)
+		panic(err)
+	}
+	targetRoom.Occupancy--
+	err = srv.DB.Save(&targetRoom).Error
 	if err != nil {
 		slog.Error("调用ORM失败。", "error", err)
 		panic(err)
@@ -276,7 +306,7 @@ func RemoveSelection(ctx context.Context, openid string, roomId string) error {
 		OpenId: openid,
 		RoomId: roomId,
 	}
-	err := srv.DB.WithContext(ctx).Delete(&selection).Error
+	err := srv.DB.WithContext(ctx).Where(&selection).Delete(&selection).Error
 	if err != nil {
 		slog.Error("调用ORM失败。", "error", err)
 		panic(err)
@@ -284,15 +314,16 @@ func RemoveSelection(ctx context.Context, openid string, roomId string) error {
 	slog.Debug("model.RemoveSelection 正在更新房间占用情况", "roomId", roomId)
 	targetRoom := Room{
 		RoomId:    roomId,
-		Available: true,
+		Available: &[]bool{true}[0],
 	}
 	err = srv.DB.WithContext(ctx).Model(&Room{}).Where(&targetRoom).First(&targetRoom).Error
 	if err != nil {
 		slog.Error("调用ORM失败。", "error", err)
 		panic(err)
 	}
+	slog.Debug("model.RemoveSelection 房间目前数量", "roomId", roomId, "occupancy", targetRoom.Occupancy)
 	targetRoom.Occupancy--
-	err = srv.DB.WithContext(ctx).Model(&Room{}).Where(&targetRoom).Updates(&targetRoom).Error
+	err = srv.DB.WithContext(ctx).Save(&targetRoom).Error
 	if err != nil {
 		slog.Error("调用ORM失败。", "error", err)
 		panic(err)

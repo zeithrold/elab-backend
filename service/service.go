@@ -1,8 +1,10 @@
 package service
 
 import (
+	"elab-backend/service/auth0"
 	"elab-backend/service/db"
 	"elab-backend/service/redis"
+	"github.com/auth0/go-auth0/management"
 	"github.com/pkg/errors"
 	libRedis "github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
@@ -10,8 +12,9 @@ import (
 )
 
 type Service struct {
-	DB    *gorm.DB
-	Redis *libRedis.Client
+	DB      *gorm.DB
+	Redis   *libRedis.Client
+	AuthAPI *management.Management
 }
 
 var service *Service
@@ -21,6 +24,7 @@ func Init() {
 	service = &Service{}
 	service.Redis = redis.NewService()
 	service.DB = db.NewService()
+	service.AuthAPI = auth0.NewService()
 }
 
 func GetService() *Service {

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"elab-backend/handler/apply"
+	"elab-backend/handler/auth"
 	"github.com/gin-gonic/gin"
 	"log/slog"
 )
@@ -11,7 +12,8 @@ func Init() *gin.Engine {
 	r := gin.Default()
 	endpoint := r.Group("/v1")
 	apply.NewHandler(endpoint)
-	r.GET("/", func(c *gin.Context) {
+	auth.NewHandler(endpoint)
+	endpoint.GET("", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "Hello World!",
 		})
