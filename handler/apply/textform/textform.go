@@ -2,17 +2,35 @@ package textform
 
 import (
 	"elab-backend/model/apply"
+	"elab-backend/service/redis"
 	"elab-backend/util/auth"
 	"github.com/gin-gonic/gin"
 )
 
 func ApplyRoute(group *gin.RouterGroup) {
 	textFormRoute := group.Group("/textform")
+	textFormRoute.Use(LockMiddleware())
 	textFormRoute.GET("", GetTextForm)
 	textFormRoute.PATCH("/:id", UpdateTextForm)
 	questionRoute := group.Group("/question")
+	questionRoute.Use(LockMiddleware())
 	questionRoute.GET("", GetQuestionList)
 	questionRoute.GET("/:id", GetQuestion)
+}
+
+func LockMiddleware() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		token := auth.GetToken(ctx)
+		openid := token.RegisteredClaims.Subject
+		unlock, err := redis.GetLock(ctx, "textform:"+openid)
+		if err != nil {
+			ctx.AbortWithStatusJSON(500, gin.H{
+				"message": "服务器错误",
+			})
+		}
+		defer unlock()
+		ctx.Next()
+	}
 }
 
 func GetQuestionList(ctx *gin.Context) {
